@@ -1,0 +1,34 @@
+#implementation of simple moving average crossover with python
+
+import  numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import quandl
+#using quandl package for reference data
+#used HongKong Exchange since data is free
+#using company HKEX/02382 since data is available
+
+data =quandl.get("HKEX/02382", authtoken="P8WpsFPM2dzVLdKQpsyz", paginate= True)
+data.tail()
+data['Nominal Price'].plot(grid=True)
+plt.title("HKEX/sunny optical (closing prices)")
+plt.show()
+short_window = 40
+long_window = 100
+signals = pd.DataFrame(index=data.index)
+signals['signal']= 0.0
+signals['short_mavg'] = data['Nominal Price'].rolling(window=short_window, min_periods=1, center=False).mean()
+signals['long_mavg'] = data['Nominal Price'].rolling(window=long_window, min_periods=1, center=False).mean()
+
+signals['signal'][short_window:] = np.where(signals['short_mavg'] [short_window:]> signals['long_mavg'] [short_window:], 1.0,0.0)
+signals['positions']=signals['signal'].diff()
+print(signals)
+
+fig= plt.figure(figsize=(20,15))
+ax1= fig.add_subplot(111, ylabel='Price in $')
+data['Nominal Price'].plot(ax=ax1, color='black',lw=2.)
+signals[['short_mavg','long_mavg']].plot(ax=ax1, lw=2.)
+
+ax1.plot(signals.loc[signals.positions == 1.0].index, signals.short_mavg[signals.positions == 1.0], '^', markersize=20, color='g')
+ax1.plot(signals.loc[signals.positions == -1.0].index, signals.short_mavg[signals.positions == -1.0], 'v', markersize=20, color='r')
+plt.show()
